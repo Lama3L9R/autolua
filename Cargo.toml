@@ -6,7 +6,6 @@ authors = ["lamadaemon <i@lama.icu>"]
 readme = "README.md"
 keywords = ["lua", "scripting", "mlua"]
 categories = ["development-tools::ffi", "api-bindings"]
-license = "Anti-996"
 license-file = "LICENSE"
 description = """
 'autolua' and 'bindlua' are two easy macros for you to generate
