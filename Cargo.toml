@@ -7,10 +7,12 @@ readme = "README.md"
 keywords = ["lua", "scripting", "mlua"]
 categories = ["development-tools::ffi", "api-bindings"]
 license = "Anti-996"
+license-file = "LICENSE"
 description = """
 'autolua' and 'bindlua' are two easy macros for you to generate
 implementations for mlua::IntoLua, mlua::FromLua, and mlua::UserData
 """
+repository = "https://github.com/Lama3L9R/autolua"
 
 [lib]
 proc-macro = true
