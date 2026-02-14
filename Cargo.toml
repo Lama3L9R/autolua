@@ -1,0 +1,22 @@
+[package]
+name = "autolua"
+version = "0.1.0"
+edition = "2024"
+authors = ["lamadaemon <i@lama.icu>"]
+readme = "README.md"
+keywords = ["lua", "scripting", "mlua"]
+categories = ["development-tools::ffi", "api-bindings"]
+license = "Anti-996"
+description = """
+'autolua' and 'bindlua' are two easy macros for you to generate
+implementations for mlua::IntoLua, mlua::FromLua, and mlua::UserData
+"""
+
+[lib]
+proc-macro = true
+
+[dependencies]
+anyhow = "1.0.101"
+proc-macro2 = "1.0.106"
+quote = "1.0.44"
+syn = { version = "2.0.114", features = ["full"] }

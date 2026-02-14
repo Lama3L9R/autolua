@@ -1,0 +1,6 @@
+# Ignore generated files
+/target
+
+# Ignore Common IDE files
+.vscode
+.idea
