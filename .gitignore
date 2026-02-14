@@ -4,3 +4,6 @@
 # Ignore Common IDE files
 .vscode
 .idea
+
+# Ignore macOS files
+.DS_Store
