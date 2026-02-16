@@ -25,7 +25,7 @@ Add `autolua` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-autolua = "0.1.3"
+autolua = "0.1.4"
 ```
 
 ## Core Features
