@@ -91,6 +91,15 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 ///         pub fn regular_rust_fn() {
 ///             todo!()
 ///         }
+///
+///         lua get fn fancyVar() -> mlua::Result<String> {
+///             return Ok("Hi! Lua".to_string());
+///         }
+///
+///         lua set fn fancyVar(str: String) {
+///             println!("set variable defined by getter/setter: fancyVar set to {}", str);
+///             return Ok(())
+///         }
 ///     }
 /// }
 /// ```
@@ -102,7 +111,7 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     x: u32,
 ///     y: String,
 ///     pub z: Option<AnotherIntoLua>
-///     pub ref refImplIntoLua: HasRefIntoLuaStruct
+///     pub refImplIntoLua: HasRefIntoLuaStruct
 ///     not_going_be_in_lua: NoIntoLuaStruct
 /// }
 ///
@@ -137,6 +146,9 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 ///         // Fields like not_going_be_in_lua without a `lua` qualifier, will not be
 ///         // able to access in lua.
+///
+///         fields.add_field_method_get("fancyVar", Self::__lua_get_fancyVar);
+///         fields.add_field_method_set("fancyVar", Self::__lua_set_fancyVar);
 ///     }
 ///
 ///     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
@@ -152,8 +164,20 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 /// - pub: same as rust pub
 /// - ref: fields only; marks a field's type has implemented IntoLua for &Type
 /// - mut: `[WIP]` `[MaybeRemoved]` make the field mutable
-/// - get: `[WIP]` functions only; mark a lua function as a getter, similar to kotlin
-/// - set: `[WIP]` functions only; mark a lua function as a setter, similar to kotlin
+/// - get: functions only; mark a lua function as a getter, similar to kotlin
+/// - set: functions only; mark a lua function as a setter, similar to kotlin
+///
+/// Note for `get` and `set`:
+///
+/// You may have noticed that `get` and `set` functions takes 0 and 1 params.
+/// This is because a special logic for function param completion is applied.
+/// Where `get` behaves the same as regular `lua` functions, that the signature will be complete to
+/// `(lua: &mlua::Lua, this: &Self)`.
+/// `set` behaves differently, that if the signature has only 1 parameter, it will be complete to
+/// `(lua: &mlua::Lua, this: &Self, <Your First Param Will Be Copied to Here>)`.
+/// If you wish to have full control, you can explicitly define all three params.
+///
+/// Also, `get` and `set` function names will be mangled by concatenating `__lua_get_` and `__lua_set_` in the front.
 ///
 #[proc_macro]
 pub fn bindlua(input: TokenStream) -> TokenStream {
