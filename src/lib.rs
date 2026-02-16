@@ -125,8 +125,8 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     }
 /// }
 ///
-/// impl UserData for MyStruct {
-///     fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
+/// impl mlua::UserData for MyStruct {
+///     fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
 ///         add_field_method_get("x", |lua, this| {
 ///             return this.x.clone().into_lua(lua);
 ///         });
@@ -151,7 +151,7 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 ///         fields.add_field_method_set("fancyVar", Self::__lua_set_fancyVar);
 ///     }
 ///
-///     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+///     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
 ///         methods.add_method("doSomething", Self::doSomething);
 ///     }
 /// }

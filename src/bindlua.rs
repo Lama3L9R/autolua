@@ -504,14 +504,14 @@ impl BindLuaBlock {
             .collect();
 
         return quote! {
-            impl UserData for #stt_name {
-                fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
+            impl mlua::UserData for #stt_name {
+                fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
                     #fields
 
                     #functional_fields
                 }
 
-                fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+                fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
                     #fns
                 }
             }
