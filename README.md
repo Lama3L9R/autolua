@@ -26,7 +26,7 @@
 
 ```toml
 [dependencies]
-autolua = "0.1.2"
+autolua = "0.1.3"
 ```
 
 ## 核心功能
