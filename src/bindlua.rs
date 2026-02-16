@@ -297,6 +297,15 @@ impl Parse for FunctionDefinition {
                 sig.inputs.push(simple_fn_arg!(lua: &mlua::Lua));
                 auto_completed_lua = true;
             }
+        } else {
+            /* We're done if the function is not a lua function */
+            return Ok(FunctionDefinition {
+                attrs,
+                qualifiers,
+                sig,
+                body,
+                field_name
+            })
         }
 
 
