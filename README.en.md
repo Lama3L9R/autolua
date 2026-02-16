@@ -141,8 +141,8 @@ Inside the `bindlua!` block, you can use the following modifiers:
 * **`lua`**: The core tag. Only fields or functions with this tag will be added to `UserData` and accessible in Lua scripts.
 * **`pub`**: Standard Rust visibility modifier.
 * **`ref` (Fields only)**: Marks that the field's type implements `IntoLua` for `&Type`. When generating a getter, the macro uses reference conversion (`self.field.into_lua(lua)`) instead of cloning (`self.field.clone().into_lua(lua)`).
-* **`mut`**: *[WIP]* Used to mark mutable fields.
-* **`get` / `set`**: *[WIP]* Used to mark functions as getters or setters similar to Kotlin. Must be used with the `lua` modifier.
+* **`mut`**: Used to mark mutable fields.
+* **`get` / `set`**: Used to mark functions as getters or setters similar to Kotlin. Must be used with the `lua` modifier.
 
 #### Method Autocompletion & Injection
 

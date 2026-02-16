@@ -467,13 +467,13 @@ impl BindLuaBlock {
             .collect();
 
 
-        // TODO: Support mut, and const (how?) Qualifier
+        // TODO: Support const (how?) Qualifier
         let fields: TokStream = self.fields.iter()
             .filter(|it| it.is_lua())
             .map(|it| {
                 let name = &it.name;
 
-                if it.is_ref() {
+                let mut toks = if it.is_ref() {
                     quote! {
                         fields.add_field_method_get(stringify!(#name), |lua, this| {
                             return this.#name.into_lua(lua);
@@ -485,9 +485,21 @@ impl BindLuaBlock {
                             return this.#name.clone().into_lua(lua);
                         });
                     }
+                };
+
+                if it.is_mut() {
+                    toks = quote! {
+                        #toks
+
+                        fields.add_field_method_set(stringify!(#name), |lua, this, val| {
+                            this.#name = val;
+
+                            return Ok(())
+                        });
+                    };
                 }
 
-
+                return toks;
             })
             .collect();
 

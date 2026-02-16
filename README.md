@@ -139,8 +139,8 @@ bindlua! {
 * **`lua`**: 核心标记。只有带有此标记的字段或函数才会被添加到 `UserData` 中，从而可以在 Lua 脚本中访问。
 * **`pub`**: 标准 Rust 可见性修饰符。
 * **`ref` (仅字段)**: 标记该字段的类型实现了 `IntoLua` for `&Type`。生成 getter 时，宏会直接使用引用转换 (`self.field.into_lua(lua)`) 而不是克隆 (`self.field.clone().into_lua(lua)`)。
-* **`mut`**: *[开发中]* 用于标记可变字段。
-* **`get` / `set`**: *[开发中]* 用于将函数标记为类似于 Kotlin 的 getter 或 setter。需要搭配 `lua` 修饰符使用。
+* **`mut`**: 用于标记可变字段。
+* **`get` / `set`**: 用于将函数标记为类似于 Kotlin 的 getter 或 setter。需要搭配 `lua` 修饰符使用。
 
 #### 方法自动补全与注入
 

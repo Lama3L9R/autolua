@@ -163,7 +163,7 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 ///        members without this qualifier, will not be added to UserData
 /// - pub: same as rust pub
 /// - ref: fields only; marks a field's type has implemented IntoLua for &Type
-/// - mut: `[WIP]` `[MaybeRemoved]` make the field mutable
+/// - mut: make the field mutable
 /// - get: functions only; mark a lua function as a getter, similar to kotlin
 /// - set: functions only; mark a lua function as a setter, similar to kotlin
 ///
