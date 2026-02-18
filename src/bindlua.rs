@@ -415,6 +415,7 @@ impl BindLuaBlock {
         let stt_qualifier = Qualifier::gen_qualifier(&self.qualifiers);
 
         return quote! {
+            #[allow(non_snake_case)]
             #stt_attr_macro
             #stt_qualifier
             struct #name {
@@ -431,6 +432,7 @@ impl BindLuaBlock {
         }).collect::<TokStream>();
 
         return quote! {
+            #[allow(non_snake_case)]
             impl #name {
                 #funcs
             }
@@ -513,6 +515,7 @@ impl BindLuaBlock {
             .collect();
 
         return quote! {
+            #[allow(non_snake_case)]
             impl mlua::UserData for #stt_name {
                 fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
                     #fields
