@@ -22,11 +22,10 @@
 
 ## 安装
 
-在你的 `Cargo.toml` 中添加 `autolua` ：
+在你的 `Cargo.toml` 中添加 `autolua`，或执行下面的指令：
 
-```toml
-[dependencies]
-autolua = "0.1.5"
+```shell
+cargo add autolua
 ```
 
 ## 核心功能
