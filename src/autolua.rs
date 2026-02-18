@@ -303,6 +303,7 @@ fn recreate_struct(target: &StructInfo) -> anyhow::Result<TokStream> {
     let stt = &target.stt;
 
     return Ok(quote! {
+        #[allow(non_snake_case)]
         #stt
     })
 }
@@ -323,6 +324,7 @@ fn gen_from_lua(target: &StructInfo) -> anyhow::Result<TokStream> {
     }).collect::<TokStream>();
 
     let implementation: TokStream = quote! {
+        #[allow(non_snake_case)]
         impl mlua::FromLua for #name {
             fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
                 return match value {
@@ -358,6 +360,7 @@ fn gen_into_lua(target: &StructInfo) -> anyhow::Result<TokStream> {
     }).collect::<TokStream>();
 
     return Ok(quote! {
+        #[allow(non_snake_case)]
         impl mlua::IntoLua for #name {
             fn into_lua(self, lua: &mlua::Lua) -> Result<mlua::Value, mlua::Error> {
                 let tbl = lua.create_table()?;
@@ -380,6 +383,7 @@ fn gen_into_lua_ref(target: &StructInfo) -> anyhow::Result<TokStream> {
     }).collect::<TokStream>();
 
     return Ok(quote! {
+        #[allow(non_snake_case)]
         impl mlua::IntoLua for &#name {
             fn into_lua(self, lua: &mlua::Lua) -> Result<mlua::Value, mlua::Error> {
                 let tbl = lua.create_table()?;
