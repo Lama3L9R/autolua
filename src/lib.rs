@@ -166,6 +166,7 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 /// - mut: make the field mutable
 /// - get: functions only; mark a lua function as a getter, similar to kotlin
 /// - set: functions only; mark a lua function as a setter, similar to kotlin
+/// - static: functions only; mark a function as a static function, which does not assume the first param is this
 ///
 /// Note for `get` and `set`:
 ///

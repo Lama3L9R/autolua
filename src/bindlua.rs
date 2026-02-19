@@ -59,6 +59,7 @@ macro_rules! define_custom_keywords {
                 Reference(Token![ref]),
                 Mutable(Token![mut]),
                 Public(Token![pub]),
+                Static(Token![static]),
             }
 
             impl Parse for Qualifier {
@@ -69,6 +70,8 @@ macro_rules! define_custom_keywords {
                         return Ok(Self::Mutable(input.parse()?))
                     } else if input.peek(Token![pub]) {
                         return Ok(Self::Public(input.parse()?))
+                    } else if input.peek(Token![static]) {
+                        return Ok(Self::Static(input.parse()?))
                     } $(
                     else if [<Keyword $keyword:camel>]::peek(input.cursor()) {
                         return Ok(Self::[<$keyword:camel>](input.parse()?))
@@ -83,13 +86,14 @@ macro_rules! define_custom_keywords {
                 fn peek(input: &ParseStream) -> bool {
                     return input.peek(Token![ref]) ||
                     input.peek(Token![mut]) ||
-                    input.peek(Token![pub])
+                    input.peek(Token![pub]) ||
+                    input.peek(Token![static])
                     $(|| [<Keyword $keyword:camel>]::peek(input.cursor()) )*
                 }
 
                 fn is_qualifier(ident: &Ident) -> bool {
                     let str = ident.to_string();
-                    return  str == "ref" || str == "mut" || str == "pub" $(|| str == stringify!($keyword))*;
+                    return  str == "ref" || str == "mut" || str == "pub" || str == "static" $(|| str == stringify!($keyword))*;
                 }
 
                 #[allow(unused)]
@@ -98,6 +102,7 @@ macro_rules! define_custom_keywords {
                         Qualifier::Reference(_) => { "ref" }
                         Qualifier::Mutable(_) => { "mut" }
                         Qualifier::Public(_) => { "pub" }
+                        Qualifier::Static(_) => { "static" }
                         $(Qualifier::[<$keyword:camel>](_) => { stringify!($keyword) })*,
                     }
                 }
@@ -124,6 +129,7 @@ macro_rules! define_custom_keywords {
                             Qualifier::Mutable(q) => quote! { #q },
                             Qualifier::Public(q) => quote! { #q },
                             Qualifier::Reference(q) => quote! { #q },
+                            Qualifier::Static(q) => quote! { #q },
                             _ => { unreachable!() }
                         }
                     })
@@ -260,6 +266,10 @@ impl FunctionDefinition {
         return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Set(_)));
     }
 
+    fn is_static(&self) -> bool {
+        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Static(_)));
+    }
+
     fn peek_fn(input: Cursor) -> bool {
         let mut opt = input.ident();
 
@@ -358,6 +368,19 @@ impl Parse for FunctionDefinition {
 
             field_name = Some(sig.ident.clone());
             sig.ident = Ident::new(&*format!("__lua_set_{}", sig.ident), Span::call_site());
+        } else if qualifiers.iter().any(|it| matches!(it, Qualifier::Static(_))) {
+            if sig.inputs.len() == 1 {
+                sig.inputs.push(simple_fn_arg!(args: mlua::MultiValue));
+            }
+
+            if matches!(sig.output, ReturnType::Default) {
+                sig.output = ReturnType::Type(
+                    Default::default(),
+                    simple_type!(mlua::Result<()>)
+                );
+
+                body.stmts.push(Stmt::Expr(Expr::Verbatim(quote! { return Ok(()) }), Default::default()))
+            }
         } else {
             /* Complete function signature for regular lua function */
 
@@ -448,9 +471,17 @@ impl BindLuaBlock {
             .map(|it| {
                 let name = &it.sig.ident;
 
-                quote! {
-                    methods.add_method(stringify!(#name), Self::#name);
+                if it.is_static() {
+                    quote! {
+                        methods.add_function(stringify!(#name), Self::#name);
+                    }
+                } else {
+                    quote! {
+                        methods.add_method(stringify!(#name), Self::#name);
+                    }
                 }
+
+
             })
             .collect();
 
