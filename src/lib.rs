@@ -7,7 +7,8 @@
 //!
 //! TLDR? NP!
 //! - `#[autolua(Into, From)]`: Used on structs, to generate IntoLua and FromLua.
-//! - `bindlua! {  }`: Generate UserData based on your needs.
+//! - `bindlua! { ... }`: Generate UserData based on your needs.
+//!     + `feature = ["simple"]` makes your life even easier.
 //!
 //! ## FAQ
 //!
@@ -63,10 +64,14 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
     return do_autolua(args, input).unwrap().into();
 }
 ///
+/// # bindlua
+///
 /// Generate UserData used for pure rust binding to lua.
 /// You declare structs with almost the same syntax!
 /// Except, we have new keywords like `lua`.
 /// The following example is the best tutorial for this macro, so go take a look!
+///
+/// **As starting from 0.2.0, the simple syntax is recommended. Please check out Simple Syntax section for more information**
 ///
 /// Example
 /// ```
@@ -167,8 +172,9 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 /// - get: functions only; mark a lua function as a getter, similar to kotlin
 /// - set: functions only; mark a lua function as a setter, similar to kotlin
 /// - static: functions only; mark a function as a static function, which does not assume the first param is this
+/// - operator: functions only; mark a function as an operator function, see below for more details
 ///
-/// Note for `get` and `set`:
+/// ## Getter and Setter
 ///
 /// You may have noticed that `get` and `set` functions takes 0 and 1 params.
 /// This is because a special logic for function param completion is applied.
@@ -179,6 +185,70 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 /// If you wish to have full control, you can explicitly define all three params.
 ///
 /// Also, `get` and `set` function names will be mangled by concatenating `__lua_get_` and `__lua_set_` in the front.
+///
+/// ## Operators
+/// To enhance readability, unlike original lua, where you name operator functions like `__add`,
+/// instead, most of the operators has removed this `__` in front. Here is a list of all supported operators:
+///
+/// Unary operators (1 args for static, 0 for non-static)
+/// - `negate` (`-a`)
+/// - **(Lua 5.3+)** `not`
+/// - `len` (`#`)
+/// - `onGarbageCollect` (`__gc`)
+/// - `toString`
+/// - `pairs`
+/// - **(Until Lua 5.4)** `ipairs`
+///
+/// Binary operators (2 args for static, 1 for non-static (self is the first operand))
+/// - `add`, `sub`, `mul`, `div`, `mod`, `pow`, `idiv`
+/// - **(Lua 5.3+)** `and`, `or`, `xor`, `shl`, `shr`
+/// - `eq`, `lt`, `le`
+/// - `concat` (`..`)
+/// - `get` (`table[key]`)
+///
+/// Trinary operators (3 args for static, 1 for non-static (self is the first operand))
+/// - `set` (`table[key] = value`)
+///
+/// Other
+/// - `invoke` (`__call`)
+///
+/// ## Simple Syntax
+///
+/// To further simplify the boilerplate code, `0.2.0` introduced a brand-new alterative DSL syntax.
+/// You can enable this syntax by enabling the `simple` feature.
+/// Simple syntax only changes how `bindlua` completes your function, so there's no difference
+/// for fields declarations etc.
+///
+/// Basically, with `simple` enabled, `bindlua` will automatically turn your raw rust types
+/// into the type that mlua requires, which allows you to declare functions like this:
+///
+/// ```
+/// // assume you have a field declared as: lua z: u32
+///
+/// lua fn myFunction(text: String, x: u32, y: u32) -> bool {
+///     println!("text is {}, x is {}, y is {}, z is {}", text, x, y, this.z);
+///
+///     return Ok(x > y)
+/// }
+/// ```
+///
+/// Similar to regular syntax, `this` and `lua` argument is always accessible even when you didn't declare them,
+/// which is known as "implicit arguments".
+///
+/// The third argument `args: MultiValue` is accessible as well.
+/// Your explicit arguments will be retrieved from `args: MultiValue` automatically by
+/// inserting `let text: String = <code that get text from args>;`, which will return
+/// Err(mlua::Error::BadArgument) if `bindlua` failed to transform mlua::Value into the type you want,
+/// or the value is missing.
+///
+/// The return value will automatically be wrapped by mlua::Result.
+/// For functions that *implicitly* returns unit (a.k.a. `()`), similar to regular syntax,
+/// `return Ok(())` is automatically inserted at the end of the function as well.
+/// However, if you explicitly declare `()` as your return type, `return Ok(())` will not be generated.
+///
+/// ## FAQ
+/// - Q: Does bindlua supports autolua?
+/// - A: Yes it does. But since `skip` is currently still broken, `#[skip]` doesn't work.
 ///
 #[proc_macro]
 pub fn bindlua(input: TokenStream) -> TokenStream {
