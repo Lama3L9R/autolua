@@ -1,11 +1,17 @@
+mod field;
+mod function;
+mod sig;
+
 use proc_macro2::{Ident, Span};
 use quote::{quote};
 use syn::parse::{Parse, ParseStream};
-use syn::{braced, Attribute, Block, Expr, FnArg, Pat, PatIdent, PatType, ReturnType, Signature, Stmt, Token, Type};
+use syn::{braced, Attribute, Token};
 use syn::__private::{CustomToken};
 use syn::buffer::Cursor;
 use syn::token::{Brace};
 use paste::paste;
+use crate::bindlua::field::FieldDefinition;
+use crate::bindlua::function::FunctionDefinition;
 use crate::imported::keyword;
 use crate::TokStream;
 
@@ -142,275 +148,15 @@ macro_rules! define_custom_keywords {
     };
 }
 
-macro_rules! simple_type {
-    ($ty:ty) => {
-        Box::new(Type::Verbatim(quote! { $ty }))
-    };
-}
-
-macro_rules! simple_fn_arg {
-    ($name:ident: $ty:ty) => {
-        FnArg::Typed(PatType {
-            attrs: Vec::new(),
-            pat: Box::new(Pat::Ident(PatIdent {
-                attrs: Vec::new(),
-                by_ref: None,
-                mutability: None,
-                ident: Ident::new(stringify!($name), Span::call_site()),
-                subpat: None,
-            })),
-            colon_token: Default::default(),
-            ty: simple_type!($ty),
-        })
-    };
-}
 
 define_custom_keywords!(
     lua /* Marks a field should be included in UserData */
     get /* get/set style of defining a field, applies only to functions */
     set /* get/set style of defining a field, applies only to functions */
+    operator /* Marks a function to be an operator function */
 );
 
-#[allow(unused)]
-struct FieldDefinition {
-    qualifiers: Vec<Qualifier>,
-    name: Ident,
-    colon: Token![:],
-    typ: Type,
-    comma: Option<Token![,]>,
-}
 
-impl FieldDefinition {
-    fn gen_toks(&self) -> TokStream {
-        let name = self.name.clone();
-        let typ = self.typ.clone();
-        return quote! {
-            #name: #typ,
-        }
-    }
-}
-
-impl FieldDefinition {
-    fn is_lua(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Lua(_)));
-    }
-
-    fn is_ref(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Reference(_)));
-    }
-
-    fn is_mut(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Mutable(_)));
-    }
-}
-
-impl Parse for FieldDefinition {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let qualifiers = input.call(Qualifier::parse_all)?;
-        let name = input.parse()?;
-        let colon = input.parse()?;
-        let typ = input.parse()?;
-        let comma = input.parse()?;
-
-        return Ok(FieldDefinition {
-            qualifiers,
-            name,
-            colon,
-            typ,
-            comma,
-        })
-    }
-}
-
-struct FunctionDefinition {
-    pub attrs: Vec<Attribute>,
-    pub qualifiers: Vec<Qualifier>,
-    pub sig: Signature,
-    pub body: Block,
-    pub field_name: Option<Ident>,
-}
-
-impl FunctionDefinition {
-    fn gen_toks(&self) -> TokStream {
-        let attrs = &self.attrs.iter().map(|it| {
-            quote! { #it }
-        }).collect::<TokStream>();
-
-        let qualifiers = Qualifier::gen_qualifier(&self.qualifiers);
-
-        let sig = &self.sig;
-
-        let body = self.body.clone();
-
-        return quote! {
-            #attrs
-            #qualifiers
-            #sig
-            #body
-        }
-    }
-
-    fn is_lua(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Lua(_)));
-    }
-
-    fn is_functional_field(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Get(_) | Qualifier::Set(_)));
-    }
-
-    fn is_getter(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Get(_)));
-    }
-
-    fn is_setter(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Set(_)));
-    }
-
-    fn is_static(&self) -> bool {
-        return self.qualifiers.iter().any(|it| matches!(it, Qualifier::Static(_)));
-    }
-
-    fn peek_fn(input: Cursor) -> bool {
-        let mut opt = input.ident();
-
-        while opt.is_some() {
-            let (ident, cursor) = opt.unwrap();
-
-            if Qualifier::is_qualifier(&ident) {
-                opt = cursor.ident();
-
-                continue;
-            }
-
-            return if ident.to_string() == "fn" {
-                true
-            } else {
-                false
-            }
-        }
-
-        return false;
-    }
-}
-
-impl Parse for FunctionDefinition {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
-        let qualifiers = input.call(Qualifier::parse_all)?;
-        let mut sig: Signature = input.parse()?;
-        let mut body: Block = input.parse()?;
-        let mut field_name = None;
-
-        let mut auto_completed_lua = false;
-        if qualifiers.iter().any(|it| matches!(it, Qualifier::Lua(_))) {
-            if sig.inputs.len() == 0 {
-                sig.inputs.push(simple_fn_arg!(lua: &mlua::Lua));
-                auto_completed_lua = true;
-            }
-        } else {
-            /* We're done if the function is not a lua function */
-            return Ok(FunctionDefinition {
-                attrs,
-                qualifiers,
-                sig,
-                body,
-                field_name
-            })
-        }
-
-
-        if qualifiers.iter().any(|it| matches!(it, Qualifier::Get(_))) {
-            /* Complete function signature for getter */
-
-            if matches!(sig.output, ReturnType::Default) {
-                let fn_name = &sig.ident;
-                body.stmts.push(Stmt::Expr(Expr::Verbatim(quote! {
-                    compile_error!(concat!("Error while attempt to complete function signature for ", stringify!(#fn_name), "! Expected a return type to auto complete required generics on add_field_method_get", stringify!(#fn_name)));
-                }), Default::default()))
-            }
-
-            if sig.inputs.len() == 1 {
-                sig.inputs.push(simple_fn_arg!(this: &Self));
-            }
-
-            field_name = Some(sig.ident.clone());
-            sig.ident = Ident::new(&*format!("__lua_get_{}", sig.ident), Span::call_site());
-        } else if qualifiers.iter().any(|it| matches!(it, Qualifier::Set(_))) {
-            /* Complete function signature for setter */
-
-            if sig.inputs.len() == 1 && !auto_completed_lua {
-                let ty = sig.inputs.pop().unwrap();
-
-                if let FnArg::Typed(_) = ty.value() {
-                    sig.inputs.push(simple_fn_arg!(lua: &mlua::Lua));
-                    sig.inputs.push(simple_fn_arg!(this: &mut Self));
-                    sig.inputs.push(ty.value().clone())
-                }
-            }
-
-            if sig.inputs.len() == 2 {
-                /* Default behavior for setter is that the first arg is default to the value being set */
-                let ty = sig.inputs.pop().unwrap();
-
-                if let FnArg::Typed(_) = ty.value() {
-                    sig.inputs.push(simple_fn_arg!(this: &mut Self));
-                    sig.inputs.push(ty.value().clone())
-                }
-
-            }
-
-            if matches!(sig.output, ReturnType::Default) {
-                sig.output = ReturnType::Type(
-                    Default::default(),
-                    simple_type!(mlua::Result<()>)
-                );
-            }
-
-            field_name = Some(sig.ident.clone());
-            sig.ident = Ident::new(&*format!("__lua_set_{}", sig.ident), Span::call_site());
-        } else if qualifiers.iter().any(|it| matches!(it, Qualifier::Static(_))) {
-            if sig.inputs.len() == 1 {
-                sig.inputs.push(simple_fn_arg!(args: mlua::MultiValue));
-            }
-
-            if matches!(sig.output, ReturnType::Default) {
-                sig.output = ReturnType::Type(
-                    Default::default(),
-                    simple_type!(mlua::Result<()>)
-                );
-
-                body.stmts.push(Stmt::Expr(Expr::Verbatim(quote! { return Ok(()) }), Default::default()))
-            }
-        } else {
-            /* Complete function signature for regular lua function */
-
-            if sig.inputs.len() == 1 {
-                sig.inputs.push(simple_fn_arg!(this: &Self));
-            }
-
-            if sig.inputs.len() == 2 {
-                sig.inputs.push(simple_fn_arg!(args: mlua::MultiValue));
-            }
-
-            if matches!(sig.output, ReturnType::Default) {
-                sig.output = ReturnType::Type(
-                    Default::default(),
-                    simple_type!(mlua::Result<()>)
-                );
-
-                body.stmts.push(Stmt::Expr(Expr::Verbatim(quote! { return Ok(()) }), Default::default()))
-            }
-        }
-
-        return Ok(FunctionDefinition {
-            attrs,
-            qualifiers,
-            sig,
-            body,
-            field_name
-        })
-    }
-}
 
 #[allow(unused)]
 pub struct BindLuaBlock {
@@ -472,12 +218,24 @@ impl BindLuaBlock {
                 let name = &it.sig.ident;
 
                 if it.is_static() {
-                    quote! {
-                        methods.add_function(stringify!(#name), Self::#name);
+                    if it.is_operator() {
+                        quote! {
+                            methods.add_meta_function(stringify!(#name), Self::#name);
+                        }
+                    } else {
+                        quote! {
+                            methods.add_function(stringify!(#name), Self::#name);
+                        }
                     }
                 } else {
-                    quote! {
-                        methods.add_method(stringify!(#name), Self::#name);
+                    if it.is_operator() {
+                        quote! {
+                            methods.add_meta_method(stringify!(#name), Self::#name);
+                        }
+                    } else {
+                        quote! {
+                            methods.add_method(stringify!(#name), Self::#name);
+                        }
                     }
                 }
 

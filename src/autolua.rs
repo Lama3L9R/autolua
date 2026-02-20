@@ -337,6 +337,17 @@ fn gen_from_lua(target: &StructInfo) -> anyhow::Result<TokStream> {
                         )
                     }
 
+                    mlua::Value::UserData(table) => {
+                        use mlua::ObjectLike;
+
+                        Ok(
+                            Self {
+                                #regular_fields
+                                #skipped_fields
+                            }
+                        )
+                    }
+
                     _ => {
                         Err(anyhow::anyhow!("Unable to convert such value into {} struct", stringify!(#name)).into())
                     }
