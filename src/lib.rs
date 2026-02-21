@@ -206,7 +206,7 @@ pub fn autolua(args: TokenStream, input: TokenStream) -> TokenStream {
 /// - `concat` (`..`)
 /// - `get` (`table[key]`)
 ///
-/// Trinary operators (3 args for static, 1 for non-static (self is the first operand))
+/// Trinary operators (3 args for static, 2 for non-static (self is the first operand))
 /// - `set` (`table[key] = value`)
 ///
 /// Other
