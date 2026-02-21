@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{Expr, FnArg, ReturnType, Stmt};
+use syn::{Expr, FnArg, ReturnType, Stmt, Pat};
 use crate::bindlua::function::FunctionDefinition;
 
 macro_rules! simple_type {
