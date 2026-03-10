@@ -69,10 +69,6 @@ struct MyLuaData {
 
 * **`mlua::Value` / `mlua::Table**`: If the field itself is an `mlua` type, the macro will keep it as-is without applying extra conversion logic.
 
-> **⚠️ Important Note regarding `#[skip]**`
-> Please **DO NOT use** the `#[skip]` attribute at this time.
-> The `autolua` project was split from the `viator` project, and the `skip` feature relies on another sub-project, `viator-utils`, which has not yet been released independently. Therefore, using `#[skip]` now will cause the generated code to reference a non-existent struct (`viator_utils::MaybeValue`), resulting in a **compilation failure**. This feature will be fixed in the future.
-
 ---
 
 ### `bindlua!` Macro

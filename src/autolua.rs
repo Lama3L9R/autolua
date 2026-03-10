@@ -3,6 +3,7 @@ use anyhow::anyhow;
 use proc_macro2::Ident;
 use quote::{quote, ToTokens};
 use syn::{Fields, ItemStruct, Token, Type};
+use syn::__private::Span;
 use syn::parse::{Parse, ParseStream};
 use crate::{TokStream};
 
@@ -136,7 +137,8 @@ pub struct StructInfo {
     pub(crate) stt: ItemStruct,
     pub(crate) target_fields: Vec<Ident>,
     pub(crate) skipped_fields: Vec<Ident>,
-    pub(crate) mat_like_fields: Vec<MatrixLikeField>
+    pub(crate) mat_like_fields: Vec<MatrixLikeField>,
+    pub(crate) maybe_wrapper: Option<String>
 }
 
 pub struct AutoLuaArgs {
@@ -173,11 +175,14 @@ pub fn transform_struct(mut target: ItemStruct) -> anyhow::Result<StructInfo> {
     let mut skipped_fields: Vec<Ident> = Vec::new();
     let mut mat_like_fields: Vec<MatrixLikeField> = Vec::new();
 
+    let mut maybe_wrapper = None;
+
     for field in &mut input_fields.named {
         if field_has_attr!(PureTag, field, "skip") {
+            maybe_wrapper = Some(format!("__maybe_wrapper_for_{}", target.ident));
 
             // Add MaybeValue wrapper to original type
-            field.ty = Type::Verbatim(gen_maybe_wrapper(field.ty.clone().into_token_stream().into()));
+            field.ty = Type::Verbatim(gen_maybe_wrapper(maybe_wrapper.clone().unwrap(), field.ty.clone().into_token_stream().into()));
 
             // Drop processed attribute (which is undefined to rustc)
             drop_attr!(field, "skip");
@@ -236,6 +241,7 @@ pub fn transform_struct(mut target: ItemStruct) -> anyhow::Result<StructInfo> {
         target_fields: regular_fields,
         skipped_fields,
         mat_like_fields,
+        maybe_wrapper
     })
 }
 
@@ -293,10 +299,11 @@ pub fn do_autolua(args: AutoLuaArgs, input: TokenStream) -> syn::Result<TokStrea
     return Ok(tok_stream);
 }
 
-fn gen_maybe_wrapper(ttype: TokenStream) -> TokStream {
+fn gen_maybe_wrapper(wrapper_name: String, ttype: TokenStream) -> TokStream {
     let ttype: TokStream = ttype.into();
+    let maybe_wrapper_name = Ident::new(&*wrapper_name.clone(), Span::call_site());
 
-    return quote! { viator_utils::maybe_value::MaybeValue<#ttype> };
+    return quote! { #maybe_wrapper_name<#ttype> };
 }
 
 fn recreate_struct(target: &StructInfo) -> anyhow::Result<TokStream> {
@@ -317,11 +324,41 @@ fn gen_from_lua(target: &StructInfo) -> anyhow::Result<TokStream> {
         }
     }).collect::<TokStream>();
 
+    let maybe_wrapper_name = &target.maybe_wrapper;
     let skipped_fields = target.skipped_fields.iter().map(|it| {
+        let maybe_wrapper_name = Ident::new(&*maybe_wrapper_name.clone().unwrap(), Span::call_site());
+
         quote! {
-            #it: viator_utils::maybe!(null),
+            #it: #maybe_wrapper_name { value: None },
         }
     }).collect::<TokStream>();
+
+    let maybe_wrapper = if maybe_wrapper_name.is_some() {
+        let maybe_wrapper_name = Ident::new(&*maybe_wrapper_name.clone().unwrap(), Span::call_site());
+        Some(quote! {
+            #[derive(Debug, Clone)]
+            #[allow(non_snake_case)]
+            pub struct #maybe_wrapper_name <T> {
+                pub value: Option<T>
+            }
+
+            impl <T> std::ops::Deref for #maybe_wrapper_name<T> {
+                type Target = T;
+
+                fn deref(&self) -> &Self::Target {
+                    return self.value.as_ref().unwrap();
+                }
+            }
+
+            impl <T> std::ops::DerefMut for #maybe_wrapper_name<T> {
+                fn deref_mut(&mut self) -> &mut Self::Target {
+                    return self.value.as_mut().unwrap();
+                }
+            }
+        })
+    } else {
+        None
+    };
 
     let implementation: TokStream = quote! {
         #[allow(non_snake_case)]
@@ -358,6 +395,7 @@ fn gen_from_lua(target: &StructInfo) -> anyhow::Result<TokStream> {
 
     Ok(quote! {
         #implementation
+        #maybe_wrapper
     })
 }
 

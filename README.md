@@ -69,10 +69,6 @@ struct MyLuaData {
 
 * **`mlua::Value` / `mlua::Table`**: 如果字段本身就是 `mlua` 的类型，宏会按原样保留，不会进行额外的转换逻辑。
 
-> **⚠️ 关于 `#[skip]` 的重要说明**
-> 目前 **请勿使用** `#[skip]` 属性。
-> `autolua` 项目拆分自 `viator` 项目，而 `skip` 功能的实现依赖于另一个尚未独立发布的子项目 `viator-utils`。因此，如果现在使用 `#[skip]`，宏生成的代码将会引用一个不存在的结构体（`viator_utils::MaybeValue`），从而导致**编译失败**。该功能将在未来修复。
-
 ---
 
 ### `bindlua!` 宏
