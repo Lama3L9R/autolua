@@ -31,37 +31,38 @@ macro_rules! simple_fn_arg {
 static META_FUNCTIONS: LazyLock<HashMap<String, (String, i8)>> = LazyLock::new(|| {
     // https://gist.github.com/oatmealine/655c9e64599d0f0dd47687c1186de99f
     HashMap::from([
-        // Name             LuaName          Params
-
         // Calculation operators
-        ("add".to_owned(), ("__add".to_owned(), 2)),
-        ("sub".to_owned(), ("__sub".to_owned(), 2)),
-        ("mul".to_owned(), ("__mul".to_owned(), 2)),
-        ("div".to_owned(), ("__div".to_owned(), 2)),
-        ("negate".to_owned(), ("__unm".to_owned(), 1)),
-        ("mod".to_owned(), ("__mod".to_owned(), 2)),
-        ("pow".to_owned(), ("__pow".to_owned(), 2)),
-        ("idiv".to_owned(), ("__idiv".to_owned(), 2)),
+        // Name                LuaName           Params
+        ("add".to_owned(),    ("__add".to_owned(),  2)),
+        ("sub".to_owned(),    ("__sub".to_owned(),  2)),
+        ("mul".to_owned(),    ("__mul".to_owned(),  2)),
+        ("div".to_owned(),    ("__div".to_owned(),  2)),
+        ("negate".to_owned(), ("__unm".to_owned(),  1)),
+        ("mod".to_owned(),    ("__mod".to_owned(),  2)),
+        ("pow".to_owned(),    ("__pow".to_owned(),  2)),
+        ("idiv".to_owned(),   ("__idiv".to_owned(), 2)),
 
         // Bitwise operators
+        //                         Name               LuaName            Params
         #[cfg(feature = "lua53")] ("and".to_owned(), ("__band".to_owned(), 2)),
-        #[cfg(feature = "lua53")] ("or".to_owned(), ("__bor".to_owned(), 2)),
+        #[cfg(feature = "lua53")] ("or".to_owned(),  ("__bor".to_owned(),  2)),
         #[cfg(feature = "lua53")] ("xor".to_owned(), ("__bxor".to_owned(), 2)),
         #[cfg(feature = "lua53")] ("not".to_owned(), ("__bnot".to_owned(), 1)),
-        #[cfg(feature = "lua53")] ("shl".to_owned(), ("__shl".to_owned(), 2)),
-        #[cfg(feature = "lua53")] ("shr".to_owned(), ("__shr".to_owned(), 2)),
+        #[cfg(feature = "lua53")] ("shl".to_owned(), ("__shl".to_owned(),  2)),
+        #[cfg(feature = "lua53")] ("shr".to_owned(), ("__shr".to_owned(),  2)),
 
         // Equation operators
+        // Name            LuaName           Params
         ("eq".to_owned(), ("__eq".to_owned(), 2)),
         ("lt".to_owned(), ("__lt".to_owned(), 2)),
         ("le".to_owned(), ("__le".to_owned(), 2)),
 
         // Misc operators
         ("concat".to_owned(), ("__concat".to_owned(), 2)),
-        ("len".to_owned(), ("__len".to_owned(), 1)),
+        ("len".to_owned(),    ("__len".to_owned(),    1)),
 
         // Indexing
-        ("get".to_owned(), ("__index".to_owned(), 2)),
+        ("get".to_owned(), ("__index".to_owned(),    2)),
         ("set".to_owned(), ("__newindex".to_owned(), 3)),
 
         // Function Call
@@ -72,8 +73,8 @@ static META_FUNCTIONS: LazyLock<HashMap<String, (String, i8)>> = LazyLock::new(|
 
         // Misc
         ("toString".to_owned(), ("__tostring".to_owned(), 1)),
-        ("pairs".to_owned(), ("__pairs".to_owned(), 1)),
-        ("ipairs".to_owned(), ("__ipairs".to_owned(), 1)),
+        ("pairs".to_owned(),    ("__pairs".to_owned(),    1)),
+        ("ipairs".to_owned(),   ("__ipairs".to_owned(),   1)),
 
     ])
 });
@@ -81,37 +82,41 @@ static META_FUNCTIONS: LazyLock<HashMap<String, (String, i8)>> = LazyLock::new(|
 static META_METHODS: LazyLock<HashMap<String, (String, i8)>> = LazyLock::new(|| {
     // https://gist.github.com/oatmealine/655c9e64599d0f0dd47687c1186de99f
     HashMap::from([
-        // Name             LuaName          Params
 
         // Calculation operators
-        ("add".to_owned(), ("__add".to_owned(), 1)),
-        ("sub".to_owned(), ("__sub".to_owned(), 1)),
-        ("mul".to_owned(), ("__mul".to_owned(), 1)),
-        ("div".to_owned(), ("__div".to_owned(), 1)),
-        ("negate".to_owned(), ("__unm".to_owned(), 0)),
-        ("mod".to_owned(), ("__mod".to_owned(), 1)),
-        ("pow".to_owned(), ("__pow".to_owned(), 1)),
-        ("idiv".to_owned(), ("__idiv".to_owned(), 1)),
+        // Name                LuaName           Params
+        ("add".to_owned(),    ("__add".to_owned(),  1)),
+        ("sub".to_owned(),    ("__sub".to_owned(),  1)),
+        ("mul".to_owned(),    ("__mul".to_owned(),  1)),
+        ("div".to_owned(),    ("__div".to_owned(),  1)),
+        ("negate".to_owned(), ("__unm".to_owned(),  0)),
+        ("mod".to_owned(),    ("__mod".to_owned(),  1)),
+        ("pow".to_owned(),    ("__pow".to_owned(),  1)),
+        ("idiv".to_owned(),   ("__idiv".to_owned(), 1)),
 
         // Bitwise operators
+        //                         Name               LuaName            Params
         #[cfg(feature = "lua53")] ("and".to_owned(), ("__band".to_owned(), 1)),
-        #[cfg(feature = "lua53")] ("or".to_owned(), ("__bor".to_owned(), 1)),
+        #[cfg(feature = "lua53")] ("or".to_owned(),  ("__bor".to_owned(),  1)),
         #[cfg(feature = "lua53")] ("xor".to_owned(), ("__bxor".to_owned(), 1)),
         #[cfg(feature = "lua53")] ("not".to_owned(), ("__bnot".to_owned(), 0)),
-        #[cfg(feature = "lua53")] ("shl".to_owned(), ("__shl".to_owned(), 1)),
-        #[cfg(feature = "lua53")] ("shr".to_owned(), ("__shr".to_owned(), 1)),
+        #[cfg(feature = "lua53")] ("shl".to_owned(), ("__shl".to_owned(),  1)),
+        #[cfg(feature = "lua53")] ("shr".to_owned(), ("__shr".to_owned(),  1)),
 
         // Equation operators
+        // Name            LuaName           Params
         ("eq".to_owned(), ("__eq".to_owned(), 1)),
         ("lt".to_owned(), ("__lt".to_owned(), 1)),
         ("le".to_owned(), ("__le".to_owned(), 1)),
 
         // Misc operators
+        // Name                LuaName               Params
         ("concat".to_owned(), ("__concat".to_owned(), 1)),
-        ("len".to_owned(), ("__len".to_owned(), 0)),
+        ("len".to_owned(),    ("__len".to_owned(),    0)),
 
         // Indexing
-        ("get".to_owned(), ("__index".to_owned(), 1)),
+        // Name              LuaName               Params
+        ("get".to_owned(), ("__index".to_owned(),    1)),
         ("set".to_owned(), ("__newindex".to_owned(), 2)),
 
         // Function Call
@@ -122,12 +127,11 @@ static META_METHODS: LazyLock<HashMap<String, (String, i8)>> = LazyLock::new(|| 
 
         // Misc
         ("toString".to_owned(), ("__tostring".to_owned(), 0)),
-        ("pairs".to_owned(), ("__pairs".to_owned(), 0)),
-        ("ipairs".to_owned(), ("__ipairs".to_owned(), 0)),
+        ("pairs".to_owned(),    ("__pairs".to_owned(),    0)),
+        ("ipairs".to_owned(),   ("__ipairs".to_owned(),   0)),
 
     ])
 });
-
 
 ///
 /// Used to complete definitions
